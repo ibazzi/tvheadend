@@ -481,6 +481,17 @@ EOF
 #define PLATFORM_$(toupper ${PLATFORM}) 1
 EOF
 
+if enabled android; then
+cat >>${CONFIG_MK} <<EOF
+CFLAGS += -I${ANDROID_TOOLCHAIN}/sysroot/usr/include/
+LDFLAGS += -L${ANDROID_TOOLCHAIN}/lib
+EOF
+else
+cat >>${CONFIG_MK} <<EOF
+LDFLAGS += -lrt -lpthread
+EOF
+fi
+
   # Add package config
   for pkg in ${PACKAGES[*]}; do
     cat >>"${CONFIG_MK}" <<EOF

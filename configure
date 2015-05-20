@@ -76,7 +76,7 @@ for opt do
     gzip)
       eval "$(toupper ${opt}CMD)=\"$val\""
       ;;
-    cc|cflags|ldflags|arch|cpu|platform|python|bzip2)
+    cc|cflags|ldflags|arch|cpu|platform|python|bzip2|android_toolchain)
       eval "$(toupper $opt)=\"$val\""
       ;;
     enable-*)
@@ -202,30 +202,15 @@ int test(void)
   return 0;
 }
 '
-
-check_cc_snippet libiconv '
-#include <iconv.h>
-int test(void)
-{
-  iconv_t ic = iconv_open("ASCII", "ASCII");
-  return 0;
-}
-' -liconv
+if check_cc_header 'iconv' libiconv; then
+  enable iconv
+fi
 
 if enabled_or_auto dvben50221; then
-  check_cc_snippet libdvben50221 '
-  #include <libdvben50221/en50221_session.h>
-  #define TEST test
-  int test(void)
-  {
-    struct en50221_transport_layer *tl = en50221_tl_create(5, 32);
-    return 0;
-  }
-  ' '-ldvben50221 -ldvbapi -lucsi'
-  if enabled libdvben50221; then
-    enable dvben50221
+  if check_cc_header 'libdvben50221/en50221_session' libdvben50221; then
+    enable linuxdvb_ca
   else
-    disable dvben50221
+    disable linuxdvb_ca
   fi
 fi
 

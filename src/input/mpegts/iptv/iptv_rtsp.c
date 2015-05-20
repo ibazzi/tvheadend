@@ -21,6 +21,10 @@
 #include "iptv_private.h"
 #include "http.h"
 
+#if ENABLE_ANDROID
+#include <sys/socket.h>
+#endif
+
 typedef struct {
   http_client_t *hc;
   udp_multirecv_t um;

@@ -35,6 +35,18 @@
 
 #if ENABLE_EPOLL
 #define EV_SIZE sizeof(struct epoll_event)
+#if ENABLE_ANDROID
+#ifndef EPOLLRDHUP
+#define EPOLLRDHUP 0x2000
+#endif
+#ifndef EPOLL_CLOEXEC
+#define EPOLL_CLOEXEC 02000000
+#endif
+static inline int epoll_create1(int flags)
+{
+  return syscall(__NR_epoll_create1,flags);
+}
+#endif
 #elif ENABLE_KQUEUE
 #define EV_SIZE sizeof(struct kevent)
 #endif
