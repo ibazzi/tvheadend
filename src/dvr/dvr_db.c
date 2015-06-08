@@ -297,8 +297,16 @@ dvr_entry_status(dvr_entry_t *de)
     }
 
   case DVR_COMPLETED:
-    if(de->de_last_error == SM_CODE_INVALID_TARGET)
-      return "File Not Created";
+    switch(de->de_last_error) {
+      case SM_CODE_INVALID_TARGET:
+        return "File Not Created";
+      case SM_CODE_USER_ACCESS:
+        return "User Access Error";
+      case SM_CODE_USER_LIMIT:
+        return "User Limit Reached";
+      default:
+        break;
+    }
     if(dvr_get_filesize(de) == -1)
       return "File Missing";
     if(de->de_last_error)
@@ -1219,6 +1227,7 @@ static void
 dvr_timer_start_recording(void *aux)
 {
   dvr_entry_t *de = aux;
+  int r;
 
   if (de->de_channel == NULL || !de->de_channel->ch_enabled) {
     dvr_entry_set_state(de, DVR_NOSTATE, DVR_RS_PENDING, de->de_last_error);
@@ -1236,8 +1245,10 @@ dvr_timer_start_recording(void *aux)
   tvhlog(LOG_INFO, "dvr", "\"%s\" on \"%s\" recorder starting",
 	 lang_str_get(de->de_title, NULL), DVR_CH_NAME(de));
 
-  if (dvr_rec_subscribe(de)) {
-    dvr_entry_completed(de, SM_CODE_BAD_SOURCE);
+  if ((r = dvr_rec_subscribe(de)) < 0) {
+    dvr_entry_completed(de, r == -EPERM ? SM_CODE_USER_ACCESS :
+                           (r == -EOVERFLOW ? SM_CODE_USER_LIMIT :
+                            SM_CODE_BAD_SOURCE));
     return;
   }
 

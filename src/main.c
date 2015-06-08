@@ -1,6 +1,6 @@
 /*
  *  TVheadend
- *  Copyright (C) 2007 - 2010 Andreas �man
+ *  Copyright (C) 2007 - 2010 Andreas Öman
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,9 +67,7 @@
 #include "esfilter.h"
 #include "intlconv.h"
 #include "dbus.h"
-#if ENABLE_LIBAV
 #include "libav.h"
-#endif
 #include "profile.h"
 #include "bouquet.h"
 #include "tvhtime.h"
@@ -159,6 +157,9 @@ const tvh_caps_t tvheadend_capabilities[] = {
 #endif
 #if ENABLE_TRACE
   { "trace",     NULL },
+#endif
+#if ENABLE_LIBAV
+  { "libav",     NULL },
 #endif
   { NULL, NULL }
 };
@@ -610,6 +611,7 @@ main(int argc, char **argv)
               opt_noacl        = 0,
               opt_fileline     = 0,
               opt_threadid     = 0,
+              opt_libav        = 0,
               opt_ipv6         = 0,
               opt_satip_rtsp   = 0,
 #if ENABLE_TSFILE
@@ -700,6 +702,9 @@ main(int argc, char **argv)
 #endif
     {   0, "fileline",  "Add file and line numbers to debug", OPT_BOOL, &opt_fileline },
     {   0, "threadid",  "Add the thread ID to debug", OPT_BOOL, &opt_threadid },
+#if ENABLE_LIBAV
+    {   0, "libav",     "More verbose libav log",  OPT_BOOL, &opt_libav },
+#endif
     {   0, "uidebug",   "Enable webUI debug (non-minified JS)", OPT_BOOL, &opt_uidebug },
     { 'A', "abort",     "Immediately abort",       OPT_BOOL, &opt_abort   },
     { 'D', "dump",      "Enable coredumps for daemon", OPT_BOOL, &opt_dump },
@@ -831,6 +836,8 @@ main(int argc, char **argv)
     log_options |= TVHLOG_OPT_FILELINE;
   if (opt_threadid)
     log_options |= TVHLOG_OPT_THREAD;
+  if (opt_libav)
+    log_options |= TVHLOG_OPT_LIBAV;
   if (opt_log_trace) {
     log_level  = LOG_TRACE;
     log_trace  = opt_log_trace;
@@ -974,9 +981,7 @@ main(int argc, char **argv)
 
   fsmonitor_init();
 
-#if ENABLE_LIBAV
   libav_init();
-#endif
 
   tvhtime_init();
 
@@ -1197,71 +1202,3 @@ scopedunlock(pthread_mutex_t **mtxp)
 {
   pthread_mutex_unlock(*mtxp);
 }
-
-
-/**
- *
- */  
-const char *
-hostconnection2str(int type)
-{
-  switch(type) {
-  case HOSTCONNECTION_USB12:
-    return "USB (12 Mbit/s)";
-    
-  case HOSTCONNECTION_USB480:
-    return "USB (480 Mbit/s)";
-
-  case HOSTCONNECTION_PCI:
-    return "PCI";
-  }
-  return "Unknown";
-
-}
-
-
-/**
- *
- */
-static int
-readlinefromfile(const char *path, char *buf, size_t buflen)
-{
-  int fd = open(path, O_RDONLY);
-  ssize_t r;
-
-  if(fd == -1)
-    return -1;
-
-  r = read(fd, buf, buflen - 1);
-  close(fd);
-  if(r < 0)
-    return -1;
-
-  buf[buflen - 1] = 0;
-  return 0;
-}
-
-
-/**
- *
- */  
-int
-get_device_connection(const char *dev)
-{
-  char path[200];
-  char l[64];
-  int speed;
-
-  snprintf(path, sizeof(path),  "/sys/class/%s/device/speed", dev);
-
-  if(readlinefromfile(path, l, sizeof(l))) {
-    // Unable to read speed, assume it's PCI
-    return HOSTCONNECTION_PCI;
-  } else {
-    speed = atoi(l);
-   
-    return speed >= 480 ? HOSTCONNECTION_USB480 : HOSTCONNECTION_USB12;
-  }
-}
-
-

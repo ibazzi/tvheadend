@@ -47,6 +47,7 @@
 #include "timeshift.h"
 #include "tvhtime.h"
 #include "input.h"
+#include "libav.h"
 #include "satip/server.h"
 
 #define EXTJSPATH "static/extjs"
@@ -477,6 +478,8 @@ extjs_config(http_connection_t *hc, const char *remain, void *opaque)
 
     /* Misc settings */
     pthread_mutex_lock(&global_lock);
+    if ((str = http_arg_get(&hc->hc_req_args, "server_name")))
+      save |= config_set_server_name(str);
     if ((str = http_arg_get(&hc->hc_req_args, "muxconfpath")))
       save |= config_set_muxconfpath(str);
     if ((str = http_arg_get(&hc->hc_req_args, "language")))
@@ -582,7 +585,9 @@ extjs_tvhlog(http_connection_t *hc, const char *remain, void *opaque)
     htsmsg_add_str(m, "tvhlog_path",       tvhlog_path ?: "");
     htsmsg_add_u32(m, "tvhlog_options",    tvhlog_options);
     htsmsg_add_u32(m, "tvhlog_dbg_syslog",
-                   tvhlog_options & TVHLOG_OPT_DBG_SYSLOG);
+                   !!(tvhlog_options & TVHLOG_OPT_DBG_SYSLOG));
+    htsmsg_add_u32(m, "tvhlog_libav",
+                   !!(tvhlog_options & TVHLOG_OPT_LIBAV));
     pthread_mutex_unlock(&tvhlog_mutex);
     
     out = json_single_record(m, "config");
@@ -609,6 +614,11 @@ extjs_tvhlog(http_connection_t *hc, const char *remain, void *opaque)
       tvhlog_options |= TVHLOG_OPT_DBG_SYSLOG;
     else
       tvhlog_options &= ~TVHLOG_OPT_DBG_SYSLOG;
+    if ((str = http_arg_get(&hc->hc_req_args, "tvhlog_libav")))
+      tvhlog_options |= TVHLOG_OPT_LIBAV;
+    else
+      tvhlog_options &= ~TVHLOG_OPT_LIBAV;
+    libav_set_loglevel();
     if (tvhlog_path && tvhlog_path[0] != '\0')
       tvhlog_options |= TVHLOG_OPT_DBG_FILE;
     tvhlog_set_trace(http_arg_get(&hc->hc_req_args, "tvhlog_trace"));

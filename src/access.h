@@ -1,6 +1,6 @@
 /*
  *  TV headend - Access control
- *  Copyright (C) 2008 Andreas Öman
+ *  Copyright (C) 2008 Andreas Ã–man
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,26 @@ struct profile;
 struct dvr_config;
 struct channel_tag;
 
+TAILQ_HEAD(passwd_entry_queue, passwd_entry);
+
+extern struct passwd_entry_queue passwd_entries;
+
+typedef struct passwd_entry {
+  idnode_t pw_id;
+
+  TAILQ_ENTRY(passwd_entry) pw_link;
+
+  char *pw_username;
+  char *pw_password;
+  char *pw_password2;
+
+  int   pw_enabled;
+
+  char *pw_comment;
+} passwd_entry_t;
+
+extern const idclass_t passwd_entry_class;
+
 typedef struct access_ipmask {
   TAILQ_ENTRY(access_ipmask) ai_link;
 
@@ -43,13 +63,17 @@ TAILQ_HEAD(access_entry_queue, access_entry);
 
 extern struct access_entry_queue access_entries;
 
+enum {
+  ACCESS_CONN_LIMIT_TYPE_ALL = 0,
+  ACCESS_CONN_LIMIT_TYPE_STREAMING,
+  ACCESS_CONN_LIMIT_TYPE_DVR,
+};
+
 typedef struct access_entry {
   idnode_t ae_id;
 
   TAILQ_ENTRY(access_entry) ae_link;
   char *ae_username;
-  char *ae_password;
-  char *ae_password2;
   char *ae_comment;
 
   int ae_index;
@@ -62,6 +86,7 @@ typedef struct access_entry {
   struct profile *ae_profile;
   LIST_ENTRY(access_entry) ae_profile_link;
 
+  int ae_conn_limit_type;
   uint32_t ae_conn_limit;
 
   int ae_dvr;
@@ -94,11 +119,15 @@ typedef struct access {
   uint32_t  aa_rights;
   htsmsg_t *aa_profiles;
   htsmsg_t *aa_dvrcfgs;
-  uint64_t  aa_chmin;
-  uint64_t  aa_chmax;
+  uint64_t *aa_chrange;
+  int       aa_chrange_count;
   htsmsg_t *aa_chtags;
   int       aa_match;
   uint32_t  aa_conn_limit;
+  uint32_t  aa_conn_limit_streaming;
+  uint32_t  aa_conn_limit_dvr;
+  uint32_t  aa_conn_streaming;
+  uint32_t  aa_conn_dvr;
 } access_t;
 
 TAILQ_HEAD(access_ticket_queue, access_ticket);
@@ -219,6 +248,14 @@ void
 access_destroy_by_dvr_config(struct dvr_config *cfg, int delconf);
 void
 access_destroy_by_channel_tag(struct channel_tag *ct, int delconf);
+
+/**
+ *
+ */
+passwd_entry_t *
+passwd_entry_create(const char *uuid, htsmsg_t *conf);
+void
+passwd_entry_save(passwd_entry_t *pw);
 
 /**
  *

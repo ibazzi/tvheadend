@@ -1,6 +1,6 @@
 /*
  *  tvheadend, HTTP interface
- *  Copyright (C) 2007 Andreas Öman
+ *  Copyright (C) 2007 Andreas Ã–man
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -319,6 +319,7 @@ struct http_client {
   char        *hc_rtp_dest;
   int          hc_rtp_port;
   int          hc_rtpc_port;
+  int          hc_rtcp_server_port;
   int          hc_rtp_multicast:1;
   long         hc_rtsp_stream_id;
   int          hc_rtp_timeout;

@@ -5,7 +5,7 @@ tvheadend.tvhlog = function(panel, index) {
     var confreader = new Ext.data.JsonReader({
         root: 'config'
     }, ['tvhlog_path', 'tvhlog_dbg_syslog', 'tvhlog_trace_on',
-        'tvhlog_debug', 'tvhlog_trace']);
+        'tvhlog_debug', 'tvhlog_trace', 'tvhlog_libav']);
 
     /* ****************************************************************
      * Form Fields
@@ -42,6 +42,12 @@ tvheadend.tvhlog = function(panel, index) {
         width: 400
     });
 
+    var tvhlogLibav = new Ext.form.Checkbox({
+        name: 'tvhlog_libav',
+        fieldLabel: 'Debug libav log'
+    });
+
+
     /* ****************************************************************
      * Form
      * ***************************************************************/
@@ -64,11 +70,13 @@ tvheadend.tvhlog = function(panel, index) {
     items = new Array();
     items.push(tvhlogLogPath);
     items.push(tvhlogToSyslog);
-    if (tvheadend.accessUpdate.trace)
+    if (tvheadend.capabilities.indexOf('trace') !== -1)
       items.push(tvhlogTraceOn);
     items.push(tvhlogDebugSubsys);
-    if (tvheadend.accessUpdate.trace)
+    if (tvheadend.capabilities.indexOf('trace') !== -1)
       items.push(tvhlogTraceSubsys);
+    if (tvheadend.capabilities.indexOf('libav') !== -1)
+      items.push(tvhlogLibav);
 
     var DebuggingPanel = new Ext.form.FieldSet({
         title: 'Debugging Options',

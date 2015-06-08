@@ -1,6 +1,6 @@
 /*
- *  Packet parsing functions
- *  Copyright (C) 2007 Andreas Öman
+ *  Tvheadend
+ *  Copyright (C) 2015 Jaroslav Kysela
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,18 +16,29 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PARSER_H264_H_
-#define PARSER_H264_H_
+#ifndef __TVH_CAID_H__
+#define __TVH_CAID_H__
 
-#include "bitstream.h"
+/**
+ * cards for which emm updates are handled
+ */
+typedef enum {
+  CARD_IRDETO,
+  CARD_DRE,
+  CARD_CONAX,
+  CARD_SECA,
+  CARD_VIACCESS,
+  CARD_NAGRA,
+  CARD_NDS,
+  CARD_CRYPTOWORKS,
+  CARD_BULCRYPT,
+  CARD_STREAMGUARD,
+  CARD_UNKNOWN
+} card_type_t;
 
-void *h264_nal_deescape(bitstream_t *bs, const uint8_t *data, int size);
+const char *caid2name(uint16_t caid);
+uint16_t name2caid(const char *str);
 
-int h264_decode_seq_parameter_set(struct elementary_stream *st, bitstream_t *bs);
+card_type_t detect_card_type(const uint16_t caid);
 
-int h264_decode_pic_parameter_set(struct elementary_stream *st, bitstream_t *bs);
-
-int h264_decode_slice_header(struct elementary_stream *st, bitstream_t *bs,
-			     int *pkttype, int *isfield);
-
-#endif /* PARSER_H264_H_ */
+#endif /* __TVH_CAID_H__ */

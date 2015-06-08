@@ -1,6 +1,6 @@
 /*
  *  Tvheadend - structures
- *  Copyright (C) 2007 Andreas Öman
+ *  Copyright (C) 2007 Andreas Ã–man
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -234,18 +234,6 @@ TAILQ_HEAD(th_pktref_queue, th_pktref);
 LIST_HEAD(streaming_target_list, streaming_target);
 
 /**
- * Device connection types
- */
-#define HOSTCONNECTION_UNKNOWN    0
-#define HOSTCONNECTION_USB12      1
-#define HOSTCONNECTION_USB480     2
-#define HOSTCONNECTION_PCI        3
-
-const char *hostconnection2str(int type);
-int get_device_connection(const char *dev);
-
-
-/**
  * Stream component types
  */
 typedef enum {
@@ -449,6 +437,8 @@ typedef enum {
 #define SM_CODE_SOURCE_DELETED            102
 #define SM_CODE_SUBSCRIPTION_OVERRIDDEN   103
 #define SM_CODE_INVALID_TARGET            104
+#define SM_CODE_USER_ACCESS               105
+#define SM_CODE_USER_LIMIT                106
 
 #define SM_CODE_NO_FREE_ADAPTER           200
 #define SM_CODE_MUX_NOT_ENABLED           201

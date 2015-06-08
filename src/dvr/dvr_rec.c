@@ -70,6 +70,7 @@ dvr_rec_subscribe(dvr_entry_t *de)
   struct sockaddr sa;
   access_t *aa;
   uint32_t rec_count, net_count;
+  int c1, c2;
 
   assert(de->de_s == NULL);
   assert(de->de_chain == NULL);
@@ -89,18 +90,21 @@ dvr_rec_subscribe(dvr_entry_t *de)
   else {
     tvherror("dvr", "unable to find access (owner '%s', creator '%s')",
              de->de_owner, de->de_creator);
-    return -1;
+    return -EPERM;
  }
 
-  if (aa->aa_conn_limit) {
+  if (aa->aa_conn_limit || aa->aa_conn_limit_dvr) {
     rec_count = dvr_usage_count(aa);
-    net_count = tcp_connection_count(aa);
-    if (rec_count + net_count >= aa->aa_conn_limit) {
+    net_count = aa->aa_conn_limit ? tcp_connection_count(aa) : 0;
+    /* the rule is: allow if one condition is OK */
+    c1 = aa->aa_conn_limit ? rec_count + net_count >= aa->aa_conn_limit : -1;
+    c2 = aa->aa_conn_limit_dvr ? rec_count >= aa->aa_conn_limit_dvr : -1;
+    if (c1 && c2) {
       tvherror("dvr", "multiple connections are not allowed for user '%s' from '%s' "
-                      "(limit %u, active streaming %u, active DVR %u)",
+                      "(limit %u, dvr limit %u, active DVR %u, streaming %u)",
                aa->aa_username ?: "", aa->aa_representative ?: "",
-               aa->aa_conn_limit, rec_count, net_count);
-      return -1;
+               aa->aa_conn_limit, aa->aa_conn_limit_dvr, rec_count, net_count);
+      return -EOVERFLOW;
     }
   }
   access_destroy(aa);
@@ -113,7 +117,7 @@ dvr_rec_subscribe(dvr_entry_t *de)
              channel_get_name(de->de_channel));
     profile_chain_close(prch);
     free(prch);
-    return -1;
+    return -EINVAL;
   }
 
   de->de_s = subscription_create_from_channel(prch, NULL, weight,
@@ -124,7 +128,7 @@ dvr_rec_subscribe(dvr_entry_t *de)
              channel_get_name(de->de_channel));
     profile_chain_close(prch);
     free(prch);
-    return -1;
+    return -EINVAL;
   }
 
   de->de_chain = prch;
