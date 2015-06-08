@@ -234,7 +234,7 @@ dvbcam_service_stop(service_t *t)
         linuxdvb_ca_enqueue_capmt(as->ca, as->slot, as->last_pmt,
                                   as->last_pmt_len,
                                   CA_LIST_MANAGEMENT_UPDATE,
-                                  CA_PMT_CMD_ID_NOT_SELECTED);
+                                  CA_PMT_CMD_ID_OK_DESCRAMBLING);
         free(as->last_pmt);
       }
       slot = as->slot;
