@@ -71,7 +71,7 @@ typedef struct dvr_config {
   struct dvr_autorec_entry_list dvr_autorec_entries;
   struct dvr_timerec_entry_list dvr_timerec_entries;
 
-  struct access_entry_list dvr_accesses;
+  idnode_list_head_t dvr_accesses;
 
 } dvr_config_t;
 
@@ -480,6 +480,8 @@ dvr_entry_t *dvr_entry_find_by_episode(epg_broadcast_t *e);
 const char *dvr_get_filename(dvr_entry_t *de);
 
 int64_t dvr_get_filesize(dvr_entry_t *de);
+
+dvr_entry_t *dvr_entry_stop(dvr_entry_t *de);
 
 dvr_entry_t *dvr_entry_cancel(dvr_entry_t *de);
 

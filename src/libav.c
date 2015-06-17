@@ -1,3 +1,4 @@
+#include "plumbing/transcoding.h"
 #include "libav.h"
 
 /**
@@ -45,17 +46,17 @@ libav_log_callback(void *ptr, int level, const char *fmt, va_list vl)
     while(l < message + sizeof(message)) {
       nl = strstr(l, "\n");
       if(nl)
-	*nl = '\0';
+        *nl = '\0';
 
       if(!strlen(l))
-	break;
+        break;
 
       tvhlog(level, "libav", "%s", l);
 
-      l += strlen(message);
-
       if(!nl)
-	break;
+        break;
+
+      l = nl + 1;
     }
 }
 
@@ -207,4 +208,5 @@ libav_init(void)
   av_log_set_callback(libav_log_callback);
   libav_set_loglevel();
   av_register_all();
+  transcoding_init();
 }

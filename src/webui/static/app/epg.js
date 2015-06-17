@@ -269,14 +269,14 @@ tvheadend.epgDetails = function(event) {
 
     function stopDVR() {
         tvheadend.AjaxConfirm({
-            url: 'api/dvr/entry/cancel',
+            url: 'api/dvr/entry/stop',
             params: {
                 uuid: event.dvrUuid
             },
             success: function(d) {
                 win.close();
             },
-            question: 'Do you really want to abort/unschedule this recording?'
+            question: 'Do you really want to gracefully stop/unschedule this recording?'
         });
     }
 
@@ -453,6 +453,7 @@ tvheadend.epg = function() {
                 dataIndex: 'progress',
                 colored: false,
                 ceiling: 100,
+                timeout: 20000, // 20 seconds
                 tvh_renderer: function(value, meta, record) {
                     var entry = record.data;
                     var start = entry.start;           // milliseconds

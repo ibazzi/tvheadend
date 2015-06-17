@@ -275,7 +275,7 @@ subscription_start_instance
     tvhtrace("subscription", "%04X: find instance for %s weight %d",
              shortid(s), s->ths_service->s_nicename, s->ths_weight);
   si = service_find_instance(s->ths_service, s->ths_channel,
-                             s->ths_source,
+                             s->ths_source, s->ths_prch,
                              &s->ths_instances, error, s->ths_weight,
                              s->ths_flags, s->ths_timeout,
                              dispatch_clock > s->ths_postpone_end ?
@@ -583,7 +583,7 @@ subscription_unsubscribe(th_subscription_t *s, int quiet)
   if (s->ths_username)
     tvh_strlcatf(buf, sizeof(buf), l, ", username=\"%s\"", s->ths_username);
   if (s->ths_client)
-    tvh_strlcatf(buf, sizeof(buf), l, ", username=\"%s\"", s->ths_client);
+    tvh_strlcatf(buf, sizeof(buf), l, ", client=\"%s\"", s->ths_client);
   tvhlog(quiet ? LOG_TRACE : LOG_INFO, "subscription", "%04X: %s", shortid(s), buf);
 
   if (t) {

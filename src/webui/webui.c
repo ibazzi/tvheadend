@@ -442,8 +442,9 @@ http_tag_playlist(http_connection_t *hc, channel_tag_t *tag)
 {
   htsbuf_queue_t *hq;
   char buf[255];
-  channel_tag_mapping_t *ctm;
+  idnode_list_mapping_t *ilm;
   char *profile, *hostpath;
+  channel_t *ch;
 
   if(hc->hc_access == NULL ||
      access_verify2(hc->hc_access, ACCESS_STREAMING))
@@ -455,11 +456,12 @@ http_tag_playlist(http_connection_t *hc, channel_tag_t *tag)
   hostpath = http_get_hostpath(hc);
 
   htsbuf_qprintf(hq, "#EXTM3U\n");
-  LIST_FOREACH(ctm, &tag->ct_ctms, ctm_tag_link) {
-    if (http_access_verify_channel(hc, ACCESS_STREAMING, ctm->ctm_channel, 0))
+  LIST_FOREACH(ilm, &tag->ct_ctms, ilm_in1_link) {
+    ch = (channel_t *)ilm->ilm_in2;
+    if (http_access_verify_channel(hc, ACCESS_STREAMING, ch, 0))
       continue;
-    snprintf(buf, sizeof(buf), "/stream/channelid/%d", channel_get_id(ctm->ctm_channel));
-    htsbuf_qprintf(hq, "#EXTINF:-1,%s\n", channel_get_name(ctm->ctm_channel));
+    snprintf(buf, sizeof(buf), "/stream/channelid/%d", channel_get_id(ch));
+    htsbuf_qprintf(hq, "#EXTINF:-1,%s\n", channel_get_name(ch));
     htsbuf_qprintf(hq, "%s%s?ticket=%s", hostpath, buf,
        access_ticket_create(buf, hc->hc_access));
     htsbuf_qprintf(hq, "&profile=%s\n", profile);
@@ -772,7 +774,8 @@ http_stream_service(http_connection_t *hc, service_t *service, int weight)
 
   if(!(pro = profile_find_by_list(hc->hc_access->aa_profiles,
                                   http_arg_get(&hc->hc_req_args, "profile"),
-                                  "service")))
+                                  "service",
+                                  SUBSCRIPTION_PACKET | SUBSCRIPTION_MPEGTS)))
     return HTTP_STATUS_NOT_ALLOWED;
 
   if((tcp_id = http_stream_preop(hc)) == NULL)
@@ -909,7 +912,8 @@ http_stream_channel(http_connection_t *hc, channel_t *ch, int weight)
 
   if(!(pro = profile_find_by_list(hc->hc_access->aa_profiles,
                                   http_arg_get(&hc->hc_req_args, "profile"),
-                                  "channel")))
+                                  "channel",
+                                  SUBSCRIPTION_PACKET | SUBSCRIPTION_MPEGTS)))
     return HTTP_STATUS_NOT_ALLOWED;
 
   if((tcp_id = http_stream_preop(hc)) == NULL)

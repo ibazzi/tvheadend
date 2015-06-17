@@ -258,6 +258,17 @@ profile_class_priority_list ( void *o )
   return strtab2htsmsg(tab);
 }
 
+static htsmsg_t *
+profile_class_svfilter_list ( void *o )
+{
+  static const struct strtab tab[] = {
+    { "None",                    PROFILE_SVF_NONE },
+    { "SD: Standard Definition", PROFILE_SVF_SD },
+    { "HD: High Definition",     PROFILE_SVF_HD },
+  };
+  return strtab2htsmsg(tab);
+}
+
 const idclass_t profile_class =
 {
   .ic_class      = "profile",
@@ -340,6 +351,15 @@ const idclass_t profile_class =
       .off      = offsetof(profile_t, pro_contaccess),
       .def.i    = 1,
     },
+    {
+      .type     = PT_INT,
+      .id       = "svfilter",
+      .name     = "Preferred Service Video Type",
+      .list     = profile_class_svfilter_list,
+      .off      = offsetof(profile_t, pro_svfilter),
+      .opts     = PO_SORTKEY,
+      .def.i    = PROFILE_SVF_NONE
+    },
     { }
   }
 };
@@ -399,8 +419,28 @@ profile_find_by_name(const char *name, const char *alt)
 /*
  *
  */
+static int
+profile_verify(profile_t *pro, int sflags)
+{
+  if (!pro)
+    return 0;
+  if (!pro->pro_enabled)
+    return 0;
+  if ((sflags & SUBSCRIPTION_HTSP) != 0 && !pro->pro_work)
+    return 0;
+  if ((sflags & SUBSCRIPTION_HTSP) == 0 && !pro->pro_open)
+    return 0;
+  sflags &= pro->pro_sflags;
+  sflags &= SUBSCRIPTION_PACKET|SUBSCRIPTION_MPEGTS;
+  return sflags ? 1 : 0;
+}
+
+/*
+ *
+ */
 profile_t *
-profile_find_by_list(htsmsg_t *uuids, const char *name, const char *alt)
+profile_find_by_list
+  (htsmsg_t *uuids, const char *name, const char *alt, int sflags)
 {
   profile_t *pro, *res = NULL;
   htsmsg_field_t *f;
@@ -408,16 +448,18 @@ profile_find_by_list(htsmsg_t *uuids, const char *name, const char *alt)
 
   pro = profile_find_by_uuid(name);
   if (!pro)
-    pro  = profile_find_by_name(name, alt);
-  uuid = pro ? idnode_uuid_as_str(&pro->pro_id) : "";
+    pro = profile_find_by_name(name, alt);
+  if (!profile_verify(pro, sflags))
+    pro = NULL;
   if (uuids) {
+    uuid = pro ? idnode_uuid_as_str(&pro->pro_id) : "";
     HTSMSG_FOREACH(f, uuids) {
       uuid2 = htsmsg_field_get_str(f) ?: "";
-      if (strcmp(uuid, uuid2) == 0)
+      if (strcmp(uuid, uuid2) == 0 && profile_verify(pro, sflags))
         return pro;
       if (!res) {
         res = profile_find_by_uuid(uuid2);
-        if (!res->pro_enabled)
+        if (!profile_verify(res, sflags))
           res = NULL;
       }
     }
@@ -425,7 +467,7 @@ profile_find_by_list(htsmsg_t *uuids, const char *name, const char *alt)
     res = pro;
   }
   if (!res)
-    res = profile_find_by_name(!strcmp(alt, "htsp") ? "htsp" : NULL, NULL);
+    res = profile_find_by_name((sflags & SUBSCRIPTION_HTSP) ? "htsp" : NULL, NULL);
   return res;
 }
 
@@ -935,6 +977,7 @@ static profile_t *
 profile_htsp_builder(void)
 {
   profile_t *pro = calloc(1, sizeof(*pro));
+  pro->pro_sflags = SUBSCRIPTION_PACKET;
   pro->pro_work   = profile_htsp_work;
   pro->pro_get_mc = profile_htsp_get_mc;
   return pro;
@@ -1037,6 +1080,7 @@ static profile_t *
 profile_mpegts_pass_builder(void)
 {
   profile_mpegts_t *pro = calloc(1, sizeof(*pro));
+  pro->pro_sflags = SUBSCRIPTION_MPEGTS;
   pro->pro_reopen = profile_mpegts_pass_reopen;
   pro->pro_open   = profile_mpegts_pass_open;
   pro->pro_get_mc = profile_mpegts_pass_get_mc;
@@ -1120,6 +1164,7 @@ static profile_t *
 profile_matroska_builder(void)
 {
   profile_matroska_t *pro = calloc(1, sizeof(*pro));
+  pro->pro_sflags = SUBSCRIPTION_PACKET;
   pro->pro_reopen = profile_matroska_reopen;
   pro->pro_open   = profile_matroska_open;
   pro->pro_get_mc = profile_matroska_get_mc;
@@ -1191,6 +1236,7 @@ static profile_t *
 profile_libav_mpegts_builder(void)
 {
   profile_libav_mpegts_t *pro = calloc(1, sizeof(*pro));
+  pro->pro_sflags = SUBSCRIPTION_PACKET;
   pro->pro_reopen = profile_libav_mpegts_reopen;
   pro->pro_open   = profile_libav_mpegts_open;
   pro->pro_get_mc = profile_libav_mpegts_get_mc;
@@ -1276,6 +1322,7 @@ static profile_t *
 profile_libav_matroska_builder(void)
 {
   profile_libav_matroska_t *pro = calloc(1, sizeof(*pro));
+  pro->pro_sflags = SUBSCRIPTION_PACKET;
   pro->pro_reopen = profile_libav_matroska_reopen;
   pro->pro_open   = profile_libav_matroska_open;
   pro->pro_get_mc = profile_libav_matroska_get_mc;
@@ -1700,6 +1747,7 @@ static profile_t *
 profile_transcode_builder(void)
 {
   profile_transcode_t *pro = calloc(1, sizeof(*pro));
+  pro->pro_sflags = SUBSCRIPTION_PACKET;
   pro->pro_free   = profile_transcode_free;
   pro->pro_work   = profile_transcode_work;
   pro->pro_reopen = profile_transcode_reopen;

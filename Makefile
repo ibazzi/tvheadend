@@ -416,6 +416,8 @@ ifeq ($(CONFIG_HDHOMERUN_STATIC),yes)
 DEPS      += ${BUILDDIR}/libhdhomerun_stamp
 endif
 
+SRCS += build.c timestamp.c
+
 #
 # Build Rules
 #
@@ -452,7 +454,7 @@ ${BUILDDIR}/%.so: ${SRCS_EXTRA}
 
 # Clean
 clean:
-	rm -rf ${BUILDDIR}/src ${BUILDDIR}/bundle*
+	rm -rf ${BUILDDIR}/src ${BUILDDIR}/bundle* ${BUILDDIR}/build.o ${BUILDDIR}/timestamp.*
 	find . -name "*~" | xargs rm -f
 	$(MAKE) -f Makefile.webui clean
 
@@ -460,6 +462,7 @@ distclean: clean
 	rm -rf ${ROOTDIR}/libav_static
 	rm -rf ${ROOTDIR}/libhdhomerun_static
 	rm -rf ${ROOTDIR}/build.*
+	rm -rf ${ROOTDIR}/data/dvb-scan
 	rm -f ${ROOTDIR}/.config.mk
 
 # Create version
@@ -476,6 +479,20 @@ src/webui/extjs.c: make_webui
 
 # Include OS specific targets
 include ${ROOTDIR}/support/${OSENV}.mk
+
+# Build files
+$(BUILDDIR)/timestamp.c: FORCE
+	@mkdir -p $(dir $@)
+	@echo '#include "build.h"' > $@
+	@echo 'const char* build_timestamp = "'`date -Iseconds`'";' >> $@
+
+$(BUILDDIR)/timestamp.o: $(BUILDDIR)/timestamp.c
+	@mkdir -p $(dir $@)
+	$(CC) -c -o $@ $<
+
+$(BUILDDIR)/build.o: $(BUILDDIR)/build.c
+	@mkdir -p $(dir $@)
+	$(CC) -c -o $@ $<
 
 # Bundle files
 $(BUILDDIR)/bundle.o: $(BUILDDIR)/bundle.c
@@ -500,7 +517,7 @@ endif
 ${BUILDDIR}/libffmpeg_stamp: ${ROOTDIR}/libav_static/build/ffmpeg/lib/libavcodec.a
 	@touch $@
 
-${ROOTDIR}/libav_static/build/ffmpeg/lib/libavcodec.a:
+${ROOTDIR}/libav_static/build/ffmpeg/lib/libavcodec.a: Makefile.ffmpeg
 	CONFIG_LIBFFMPEG_STATIC_X264=$(CONFIG_LIBFFMPEG_STATIC_X264) \
 	  $(MAKE) -f Makefile.ffmpeg build
 
@@ -514,7 +531,7 @@ endif
 ${BUILDDIR}/libhdhomerun_stamp: ${ROOTDIR}/libhdhomerun_static/libhdhomerun/libhdhomerun.a
 	@touch $@
 
-${ROOTDIR}/libhdhomerun_static/libhdhomerun/libhdhomerun.a:
+${ROOTDIR}/libhdhomerun_static/libhdhomerun/libhdhomerun.a: Makefile.hdhomerun
 	$(MAKE) -f Makefile.hdhomerun build
 
 # linuxdvb git tree
