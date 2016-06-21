@@ -67,7 +67,7 @@ ifeq ($(CONFIG_ANDROID),no)
 LDFLAGS += -lrt
 endif
 endif
-
+LDFLAGS += -s
 ifeq ($(COMPILER), clang)
 CFLAGS  += -Wno-microsoft -Qunused-arguments -Wno-unused-function
 CFLAGS  += -Wno-unused-value -Wno-tautological-constant-out-of-range-compare
