@@ -807,6 +807,27 @@ htsmsg_t *network_interfaces_enum(void *obj, const char *lang)
 #endif
 }
 
+#if ENABLE_ANDROID
+time_t timegm(struct tm* const t) {
+  // time_t is signed on Android.
+  static const time_t kTimeMax = ~(1L << (sizeof(time_t) * CHAR_BIT - 1));
+  static const time_t kTimeMin = (1L << (sizeof(time_t) * CHAR_BIT - 1));
+  time64_t result = timegm64(t);
+  if (result < kTimeMin || result > kTimeMax)
+    return -1;
+  return result;
+}
+
+int pthread_condattr_setclock(pthread_condattr_t* attr, clockid_t clock) {
+  if (clock != CLOCK_MONOTONIC && clock != CLOCK_REALTIME) {
+    return EINVAL;
+  }
+
+  *attr = COND_SET_CLOCK(*attr, clock);
+  return 0;
+}
+#endif
+
 const char *
 gmtime2local(time_t gmt, char *buf, size_t buflen)
 {
