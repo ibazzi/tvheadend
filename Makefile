@@ -56,7 +56,7 @@ LDFLAGS += -ldl -lm
 else
 LDFLAGS += -ldl -lpthread -lm
 endif
-LDFLAGS += -pie -Wl,-z,now
+LDFLAGS += -Wl,-z,now
 ifeq ($(CONFIG_LIBICONV),yes)
 LDFLAGS += -liconv
 endif
